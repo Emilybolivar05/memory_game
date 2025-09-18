@@ -1,172 +1,203 @@
-const board = document.getElementById("game-board");
-const movesCounter = document.getElementById("moves");
-const timerDisplay = document.getElementById("timer");
-const restartButton = document.getElementById("restart");
+// HTML ELEMENT GRABBERS
+const menuContainer = document.querySelector(".menu-container");
+const gameContainer = document.querySelector(".game-container");
+const gameBoard = document.getElementById("game-board");
+const startBtn = document.getElementById("start-btn");
+const resetBtn = document.getElementById("reset-btn");
 const levelSelect = document.getElementById("level");
-const startButton = document.getElementById("start-game");
-const recordDiv = document.getElementById("record");
+const timerDisplay = document.getElementById("timer");
+const movesDisplay = document.getElementById("moves");
 
-let cardsArray = [
-  'typescript.png','swift.png','sql.png','python.png','php.png','nodejs.png',
-  'js.png','java.png','html5.png','github.png','docker.png','css3.png'
+// CARD IMAGES
+const logos = [
+  "typescript.png", "swift.png", "sql.png", "python.png",
+  "php.png", "nodejs.png", "js.png", "java.png",
+  "html5.png", "github.png", "docker.png", "css3.png"
 ];
-let gameCards = [];
+
+// VARIABLES
 let flippedCards = [];
 let moves = 0;
 let timer = 0;
 let interval;
-let currentLevel = 'easy';
-let boardLocked = false;
+let unlockedLevels = ["easy"];
 
-// part of levels
+// LEVELS
 const levels = {
-  easy: { pairs: 4, time: 60 },
-  medium: { pairs: 8, time: 90 },
-  hard: { pairs: 12, time: 110 }
+  easy: { pairs: 8, time: 60 },    //Beginner-friendly
+  medium: { pairs: 10, time: 90 }, //Getting tricky
+  hard: { pairs: 12, time: 120 }   //Brain-buster!
 };
 
-// part of sounds
-const flipSound = new Audio('sounds/flip.mp3');
-flipSound.preload = 'auto';
-const matchSound = new Audio('sounds/match.mp3');
-matchSound.preload = 'auto';
-const winSound = new Audio('sounds/win.mp3');
-winSound.preload = 'auto';
-const loseSound = new Audio('sounds/lose.mp3');
-loseSound.preload = 'auto';
+// SOUNDS
+const flipSound = new Audio("sounds/flip.mp3");
+const matchSound = new Audio("sounds/match.mp3");
+const winSound = new Audio("sounds/win.mp3");
+const loseSound = new Audio("sounds/lose.mp3");
 
-// part of events, actions
-startButton.addEventListener('click', () => {
-  currentLevel = levelSelect.value;
-  setupGame();
-});
-restartButton.addEventListener('click', setupGame);
 
-// shuffle cards
+// Shuffle array like a magician
 function shuffle(array) {
   return array.sort(() => Math.random() - 0.5);
 }
 
-// conf game
-function setupGame() {
-  const { pairs, time } = levels[currentLevel];
+// Create a single card element
+function createCard(logo) {
+  const card = document.createElement("div");
+  card.classList.add("card");
 
-  const record = JSON.parse(localStorage.getItem(`record-${currentLevel}`));
-  recordDiv.textContent = record
-    ? `Mejor récord: ${record.moves} movimientos, ${record.time} segundos`
-    : `Mejor récord: -`;
-
-
-  const selectedCards = cardsArray.slice(0, pairs);
-  gameCards = [...selectedCards, ...selectedCards];
-
-  // create dashboard
-  board.innerHTML = '';
-  board.className = 'game-board';
-  board.classList.add(currentLevel);
-
-  shuffle(gameCards).forEach(image => {
-    const card = document.createElement('div');
-    card.classList.add('card');
-    card.dataset.image = image;
-    card.innerHTML = `
-      <div class="card-inner">
-        <div class="card-front"></div>
-        <div class="card-back">
-          <img src="images/${image}" alt="logo">
-        </div>
+  card.innerHTML = `
+    <div class="card-inner">
+      <div class="card-front">?</div>
+      <div class="card-back">
+        <img src="images/${logo}" alt="${logo}">
       </div>
-    `;
-    card.addEventListener('click', flipCard);
-    board.appendChild(card);
+    </div>
+  `;
+
+  card.addEventListener("click", () => flipCard(card, logo));
+  return card;
+}
+
+// START 
+function startGame() {
+  const selectedLevel = levelSelect.value;
+
+  // Check if level is unlocked
+  if (!unlockedLevels.includes(selectedLevel)) {
+    alert("Nivel bloqueado. Completa el anterior primero.");
+    return;
+  }
+
+  // Check if level is unlocked
+  menuContainer.classList.add("hidden");
+  gameContainer.classList.remove("hidden");
+
+  const { pairs, time } = levels[selectedLevel];
+  moves = 0;
+  timer = time;
+  movesDisplay.textContent = moves;
+  timerDisplay.textContent = timer;
+
+  flippedCards = [];
+  gameBoard.innerHTML = "";
+
+ // Determine grid columns by level
+  let columns;
+  if (selectedLevel === "easy") columns = 4;
+  else if (selectedLevel === "medium") columns = 5;
+  else columns = 6;
+
+  gameBoard.style.gridTemplateColumns = `repeat(${columns}, 1fr)`; 
+
+
+  const selectedLogos = logos.slice(0, pairs);
+  const gameCards = shuffle([...selectedLogos, ...selectedLogos]);
+
+  gameCards.forEach(logo => {
+    const card = createCard(logo);
+    gameBoard.appendChild(card);
   });
 
-  // reset counters
-  moves = 0;
-  movesCounter.textContent = moves;
-
-  // timer
   clearInterval(interval);
-  timer = time;
-  timerDisplay.textContent = timer;
   interval = setInterval(() => {
     timer--;
     timerDisplay.textContent = timer;
     if (timer <= 0) {
       clearInterval(interval);
-      alert('¡Se acabó el tiempo! 😢');
       loseSound.currentTime = 0;
       loseSound.play();
-      board.innerHTML = '';
+      alert("¡Se acabó el tiempo!");
+      resetGame();
     }
   }, 1000);
-
-  flippedCards = [];
-  boardLocked = false;
 }
 
-// function flip card
-function flipCard() {
-  if (boardLocked) return;
-  if (flippedCards.includes(this) || this.classList.contains('flipped')) return;
+// FLIP CARD LOGIC
+function flipCard(card, logo) {
+  if (flippedCards.length < 2 && !card.classList.contains("flipped")) {
+    card.classList.add("flipped");
+    flipSound.currentTime = 0;
+    flipSound.play();
+    flippedCards.push({ card, logo });
 
-  this.classList.add('flipped');
-  flippedCards.push(this);
-
-  flipSound.currentTime = 0;
-  flipSound.play();
-
-  if (flippedCards.length === 2) {
-    moves++;
-    movesCounter.textContent = moves;
-    boardLocked = true;
-    setTimeout(checkMatch, 800);
+    if (flippedCards.length === 2) {
+      moves++;
+      movesDisplay.textContent = moves;
+      setTimeout(checkMatch, 500);
+    }
   }
 }
 
-// see if there is a match or not
+// CHECK MATCH
 function checkMatch() {
-  const [card1, card2] = flippedCards;
+  const [first, second] = flippedCards;
 
-  if (card1.dataset.image === card2.dataset.image) {
-    card1.removeEventListener('click', flipCard);
-    card2.removeEventListener('click', flipCard);
+  if (first.logo === second.logo) {
+      // They match! 
     matchSound.currentTime = 0;
     matchSound.play();
+    first.card.style.boxShadow = "0 0 20px gold";
+        second.card.style.boxShadow = "0 0 20px gold";
 
-    card1.style.boxShadow = '0 0 30px gold';
-    card2.style.boxShadow = '0 0 30px gold';
     setTimeout(() => {
-      card1.style.boxShadow = '';
-      card2.style.boxShadow = '';
+      first.card.style.boxShadow = "";
+      second.card.style.boxShadow = "";
     }, 500);
   } else {
-    setTimeout(() => {
-      card1.classList.remove('flipped');
-      card2.classList.remove('flipped');
-    }, 500);
+    // Nope, back to mystery
+    first.card.classList.remove("flipped");
+    second.card.classList.remove("flipped");
   }
 
   flippedCards = [];
-  boardLocked = false;
 
-  // Check game over
-  if (document.querySelectorAll('.card.flipped').length === gameCards.length) {
+  // Did we win the level?
+  const allFlipped = document.querySelectorAll(".card.flipped").length;
+  const totalCards = document.querySelectorAll(".card").length;
+
+  if (allFlipped === totalCards) {
     clearInterval(interval);
-    alert(`¡Ganaste en ${moves} movimientos y ${timer} segundos! 🎉`);
     winSound.currentTime = 0;
     winSound.play();
-    saveRecord(currentLevel, moves, timer);
+    alert(`¡Ganaste en ${moves} movimientos y ${timer} segundos!`);
+    unlockNextLevel(levelSelect.value);
+    resetGame()
   }
 }
 
-// save some records
-function saveRecord(level, moves, time) {
-  const record = JSON.parse(localStorage.getItem(`record-${level}`));
-
-  if (!record || moves < record.moves || (moves === record.moves && time < record.time)) {
-    const newRecord = { moves, time };
-    localStorage.setItem(`record-${level}`, JSON.stringify(newRecord));
-    alert(`¡Nuevo récord para el nivel ${level.toUpperCase()}! 🏆`);
+// UNLOCK NEXT LEVEL
+function unlockNextLevel(currentLevel) {
+  if (currentLevel === "easy" && !unlockedLevels.includes("medium")) {
+    unlockedLevels.push("medium");
+    document.querySelector('#level option[value="medium"]').disabled = false;
+  }
+  if (currentLevel === "medium" && !unlockedLevels.includes("hard")) {
+    unlockedLevels.push("hard");
+    document.querySelector('#level option[value="hard"]').disabled = false;
   }
 }
+
+// RESET 
+function resetGame() {
+  clearInterval(interval);
+  gameBoard.innerHTML = "";
+  gameContainer.classList.add("hidden");
+  menuContainer.classList.remove("hidden");
+  flippedCards = [];
+  moves = 0;
+  timer = 0;
+  movesDisplay.textContent = moves;
+  timerDisplay.textContent = timer;
+}
+
+function resetProgress() {
+  unlockedLevels = ["easy"];
+  levelSelect.value = "easy"; //Force easy level selection
+  alert("¡Progreso reiniciado! Solo el nivel fácil está disponible.");
+}
+
+
+startBtn.addEventListener("click", startGame);
+resetBtn.addEventListener("click", resetGame);      // Clear board & show menu
+resetBtn.addEventListener("click", resetProgress); 

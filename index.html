@@ -7,27 +7,38 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="start-screen"></div>
-  <h1>Memory Game</h1>
 
-  <div class="level-select">
-    <label for="level">Selecciona nivel:</label>
-    <select id="level">
-      <option value="easy">Fácil</option>
-      <option value="medium">Medio</option>
-      <option value="hard">Difícil</option>
-    </select>
-    <button id="start-game">Iniciar Juego</button>
+  <!-- main menu -->
+  <div class="menu-container">
+    <div class="menu-box">
+      <h1>Memory Game</h1>
+
+      <!-- level select -->
+      <div class="level-select">
+        <label for="level">Escoge nivel:</label>
+        <select id="level">
+          <option value="easy">Fácil</option>
+          <option value="medium" disabled>Medio</option>
+          <option value="hard" disabled>Difícil</option>
+        </select>
+      </div>
+
+      <!-- buttons -->
+      <div class="menu-buttons">
+        <button id="start-btn">Iniciar Juego</button>
+        <button id="reset-btn">Reiniciar Juego</button>
+      </div>
+    </div>
   </div>
 
-  <div class="game-info">
-    <span>Movimientos: <span id="moves">0</span></span>
-    <span>Tiempo: <span id="timer">0</span>s</span>
+  <!-- game screen -->
+  <div class="game-container hidden">
+    <div class="game-info">
+      <span>Movimientos: <span id="moves">0</span></span>
+      <span>Tiempo: <span id="timer">0</span>s</span>
+    </div>
+    <div id="game-board"></div>
   </div>
-
-  <div id="record"></div>
-  <div class="game-board" id="game-board"></div>
-  <button id="restart">Reiniciar Juego</button>
 
   <script src="script.js"></script>
 </body>
