@@ -6,7 +6,7 @@ Perfect for practicing your memory and having some coding fun.
 
 ---
 
-## 🚀 Features  
+## Features  
 
 - **Three difficulty levels**:  
   - *Easy* → 8 pairs, 60 seconds  
@@ -19,7 +19,7 @@ Perfect for practicing your memory and having some coding fun.
 
 ---
 
-## 🛠️ Technologies Used  
+## Technologies Used  
 
 - **HTML5** – Structure of the game  
 - **CSS3** – Styling, animations, and responsive design  
